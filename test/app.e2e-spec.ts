@@ -5,7 +5,7 @@ import { AppModule } from './../src/app.module';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
-import { CreateReservas2Dto } from 'src/reservas2/dto/create-reservas2.dto';
+import { CreateReservasDto } from 'src/reservas/dto/create-reserva.dto';
 
 describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
   let app: INestApplication;
@@ -44,7 +44,7 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
     try {
 
       await request(app.getHttpServer())
-        .post('/auth-2020/register_bluuweb')
+        .post('/auth/register')
         .send(newUser)
         .expect(201)
         .expect(({ body }) => {
@@ -52,12 +52,11 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
           expect(body.newUser.name).toEqual(newUser.name);
           expect(body.newUser.email).toEqual(newUser.email);
           expect(body.newUser.role).toEqual(newUser.role);
-          expect(body.newUser.password).toBeDefined();
         });
 
 
       await request(app.getHttpServer())
-        .post('/auth-2020/login_bluuweb')
+        .post('/auth/login')
         .send(newUser)
         .expect(200)
         .expect(({ body }) => {
@@ -91,7 +90,7 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
     };
 
     await request(app.getHttpServer())
-      .post('/auth-2020/register_bluuweb')
+      .post('/auth/register')
       .send(newUser)
       .expect(201)
       .expect(({ body }) => {
@@ -100,12 +99,12 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
         expect(body.newUser.email).toEqual(newUser.email);
         expect(body.newUser.telefono).toEqual(newUser.telefono);
         expect(body.newUser.role).toEqual(newUser.role);
-        expect(body.newUser.password).toBeDefined();
+        expect(body.newUser.password).toBeUndefined();
       });
 
 
     await request(app.getHttpServer())
-      .post('/auth-2020/login_bluuweb')
+      .post('/auth/login')
       .send(newUser)
       .expect(200)
       .expect(({ body }) => {
@@ -133,7 +132,7 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
     };
 
     await request(app.getHttpServer())
-      .post('/auth-2020/register_bluuweb')
+      .post('/auth/register')
       .send(newUser)
       .expect(201)
       .expect(({ body }) => {
@@ -142,12 +141,12 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
         expect(body.newUser.email).toEqual(newUser.email);
         expect(body.newUser.telefono).toEqual(newUser.telefono);
         expect(body.newUser.role).toEqual(newUser.role);
-        expect(body.newUser.password).toBeDefined();
+        expect(body.newUser.password).toBeUndefined();
         id_cliente = body.newUser.id;
       });
 
     await request(app.getHttpServer())
-      .post('/auth-2020/login_bluuweb')
+      .post('/auth/login')
       .send(newUser)
       .expect(200)
       .expect(({ body }) => {
@@ -158,9 +157,21 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
 
   });
 
+  it('Crear los detalles del parking', async () => {
+    await request(app.getHttpServer())
+      .post('/details/set')
+      .set("authorization", `Bearer ${jwt_admin}`)
+      .send({ capacidad_parking: 1111 })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body).toBeTruthy()
+        ocupacionActua = body.ocupacion_actual;
+      });
+  })
+
   it('Reservar una plaza de aparcamiento', async () => {
 
-    const createReservas2Dto: CreateReservas2Dto = new CreateReservas2Dto();
+    const createReservas2Dto: CreateReservasDto = new CreateReservasDto();
 
     let uuuu: String = uuidv4();
     uuuu = uuuu.toUpperCase().replaceAll("-", "");
@@ -176,7 +187,7 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
     createReservas2Dto.fecha_y_hora_salida = fecha_y_hora_salida
 
     await request(app.getHttpServer())
-      .post('/reservas2')
+      .post('/reservas')
       .set("authorization", `Bearer ${jwt_cliente}`)
       .send(createReservas2Dto)
       .expect(201)
@@ -184,30 +195,16 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
         expect(body).toBeTruthy()
         expect(body.id_cliente).toEqual(id_cliente)
       });
-
-
   });
 
-  it('crear los detalles del parking', async () => {
-    await request(app.getHttpServer())
-      .post('/details/set')
-      .set("authorization", `Bearer ${jwt_admin}`)
-      .send({ capacidad_parking: 1111 })
-      .expect(201)
-      .expect(({ body }) => {
-        expect(body).toBeTruthy()
-        ocupacionActua = body.ocupacion_actual;
-      });
-  })
-
-  it('simular entrada de vehiculo', async () => {
+  it('Simular entrada de vehiculo', async () => {
     await request(app.getHttpServer())
       .get('/details/entrada_vehiculo')
       .set("authorization", `Bearer ${jwt_empleado}`)
       .expect(200)
   })
 
-  it('primera consulta de la ocupacion del parking', async () => {
+  it('Primera consulta de la ocupacion del parking', async () => {
     await request(app.getHttpServer())
       .get('/details/ocupacion_actual')
       .set("authorization", `Bearer ${jwt_empleado}`)
@@ -219,14 +216,14 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
       });
   })
 
-  it('simular salida de vehiculo', async () => {
+  it('Simular salida de vehiculo', async () => {
     await request(app.getHttpServer())
       .get('/details/salida_vehiculo')
       .set("authorization", `Bearer ${jwt_empleado}`)
       .expect(200)
   })
 
-  it('segunda consulta de la ocupacion del parking', async () => {
+  it('Segunda consulta de la ocupacion del parking', async () => {
     await request(app.getHttpServer())
       .get('/details/ocupacion_actual')
       .set("authorization", `Bearer ${jwt_empleado}`)
@@ -274,8 +271,6 @@ describe('pruebas e2e automatizadas para los 3 casos de uso', () => {
         expect(body.telefono).toEqual(userPrueba.telefono);
 
       });
-
-
   });
 
   afterAll(async () => {

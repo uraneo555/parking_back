@@ -4,6 +4,7 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { User } from "./entities/user.entity";
 import * as bcryptjs from "bcryptjs";
+import { DatoResult } from "src/utiles/dato_result.class";
 
 @Injectable()
 export class UsersService {
@@ -13,13 +14,15 @@ export class UsersService {
     private readonly repositoryModel: typeof User,
   ) { }
 
+  // async findOneById(id: number) {
+  //   const user = await this.repositoryModel.findByPk(id)
+  //   return this.getUserSinPassword(user);
+  // }
+
   async findOneById(id: number) {
     const user = await this.repositoryModel.findByPk(id)
+    this.excepSiNoExisteUsuario(user, 'id', id)
     return this.getUserSinPassword(user);
-  }
-
-  async findOne(id: number) {
-    return this.getUserSinPassword(await this.repositoryModel.findByPk(id));
   }
 
   async findAll() {
@@ -41,72 +44,53 @@ export class UsersService {
     return result;
   }
 
-  async findOneByEmail(email: string) {
-    return await this.repositoryModel.findOne({
-      where: {
-        email
-      }
-    });
-  }
-
-  async getUserByName(name: string) {
-    return await this.repositoryModel.findOne({
-      where: {
-        name
-      }
-    });
-  }
-
-  async findOneByEmailWithPassword(email: string) {
-    return await this.repositoryModel.findOne({
-      where: { email }
-    });
+  async findOneByEmail(email: string) {// no lo cambies asi esta perfecto
+    return await this.repositoryModel.findOne({where: { email }});
   }
 
   async update(updateDto: UpdateUserDto) {
-    try {
+
+    
       let userDB = await this.repositoryModel.findByPk(updateDto.id);
-      if (userDB) {
-        if (updateDto.password != undefined) {
-          updateDto.password = await bcryptjs.hash(updateDto.password, 10);
-        }
-        else {
-          updateDto.password = userDB.password;
-        }
-        if (updateDto.email == undefined) {
-          updateDto.email = userDB.email;
-        }
-        if (updateDto.name == undefined) {
-          updateDto.name = userDB.name;
-        }
-        if (updateDto.role == undefined) {
-          updateDto.role = userDB.role;
-        }
-        if (updateDto.telefono == undefined) {
-          updateDto.telefono = userDB.telefono;
-        }
+      this.excepSiNoExisteUsuario(userDB, 'id', updateDto.id)
 
-        userDB = (await this.repositoryModel.upsert(updateDto))[0];
+      if (updateDto.password != undefined) {
+        updateDto.password = await bcryptjs.hash(updateDto.password, 10);
+      }
+      else {
+        updateDto.password = userDB.password;
+      }
+      if (updateDto.email == undefined) {
+        updateDto.email = userDB.email;
+      }
+      if (updateDto.name == undefined) {
+        updateDto.name = userDB.name;
+      }
+      if (updateDto.role == undefined) {
+        updateDto.role = userDB.role;
+      }
+      if (updateDto.telefono == undefined) {
+        updateDto.telefono = userDB.telefono;
+      }
 
-        return userDB;
-      } else {
-        throw new BadRequestException(`No existe un usuario de id ${updateDto.id}`)
-      }
-    } catch (error) {
-      if (error.original.code === "23505") {
-        throw new BadRequestException(error.original.detail)
-      } else {
-        console.log(error);
-      }
+      userDB = (await this.repositoryModel.upsert(updateDto))[0];
+
+      return this.getUserSinPassword(userDB);
     }
-  }
 
   async remove(id: number) {
-    const user = await this.repositoryModel.findByPk(id);
-    if (user) {
-      return await user.destroy();
-    } else {
-      throw new BadRequestException(`no existe usuario con id ${id}`)
+    let user = await this.repositoryModel.findByPk(id);
+    this.excepSiNoExisteUsuario(user, 'id', id)
+    await user.destroy();
+    const result:DatoResult = new DatoResult();
+    result.dato = this.getUserSinPassword(user);
+    result.message = "Usuario eliminado satisfactoriamente.";
+    return result
+  }
+
+  excepSiNoExisteUsuario(user: User, arg1: string, value: any) {
+    if (!user) {
+      throw new BadRequestException(`No existe usuario con ${arg1} ${value}`)
     }
   }
 

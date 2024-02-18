@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RolesEnum } from './role.enum';
 import { AuthRolesGuard } from 'src/auth/auth_roles.guard';
+import { IUserSimple } from './IUserSimple.interface';
 
 @Controller('users')
 @AuthRolesGuard(RolesEnum.ADMIN)
@@ -22,8 +23,9 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const user: IUserSimple = await this.usersService.findOneById(+id);
+    return user;
   }
 
   @Patch()
@@ -31,10 +33,10 @@ export class UsersController {
     return this.usersService.update(updateUserDto);
   }
 
-  @Post('simple')
-  updateSimple(@Body() updateUserDto) {
-    return this.usersService.update(updateUserDto);
-  }
+  // @Post('simple')
+  // updateSimple(@Body() updateUserDto) {
+  //   return this.usersService.update(updateUserDto);
+  // }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
