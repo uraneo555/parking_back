@@ -69,7 +69,7 @@ export class UsersService {
       if (updateDto.role == undefined) {
         updateDto.role = userDB.role;
       }
-      if (updateDto.telefono == undefined) {
+      if (!updateDto.telefono) {
         updateDto.telefono = userDB.telefono;
       }
 
